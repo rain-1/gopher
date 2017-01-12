@@ -39,7 +39,7 @@ class Engine : Object {
 								  out char gopher_type,
 								  out string selector) {
 		try {
-			Regex regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/(?<gophertype>.))?(\/(?<selector>[^:]+))?\/?$/;
+			Regex regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/((?<gophertype>.))?(?<selector>[^:]+))?\/?$/;
 			MatchInfo match_info;
 			if (regex.match (url, 0, out match_info)) {
 				host = match_info.fetch_named ("host");
@@ -57,8 +57,13 @@ class Engine : Object {
 				}
 			
 				selector = match_info.fetch_named ("selector");
-				if (selector == null) selector = "/";
-				if (selector[0] != '/') selector = "/" + selector;
+				if (selector == null) selector = "";
+				
+				// DBG
+				stdout.printf("HOST: %s\n", host);
+				stdout.printf("PORT: %d\n", port);
+				stdout.printf("TYPE: %c\n", gopher_type);
+				stdout.printf("SLCT: %s\n", selector);
 			
 				return true;
 			}
@@ -92,7 +97,8 @@ class Engine : Object {
 			// Send HTTP GET request
 			string message = @"%s\n\r".printf (selector);
 			conn.output_stream.write (message.data);
-		
+			stdout.printf ("REQ %s\n", message);
+			
 			// Receive response
 			DataInputStream response = new DataInputStream (conn.input_stream);
 			TextIter iter;
@@ -107,11 +113,14 @@ class Engine : Object {
 			}
 			else if (gopher_type == '1') {
 				try {
-					Regex regex = /(?<gopher_type>.)(?<text>[^\t]*)\t(?<selector>[^\t]*)\t(?<host>[^\t]*)\t(?<port>[^\t]*)/;
+					Regex regex = /(?<gopher_type>.)(?<text>[^\t]*)(\t(?<selector>[^\t]*))?(\t(?<host>[^\t]*))?(\t(?<port>[^\t]*))?/;
 					MatchInfo match_info;
 				
 					string status_line;
 					while ((status_line = response.read_line (null).strip ()) != null) {
+						//DBG
+						stdout.printf ("GOPHE %s\n", status_line);
+						
 						if (status_line == ".") {
 							//
 						}
@@ -120,8 +129,10 @@ class Engine : Object {
 							string status = match_info.fetch_named ("text");
 							string line_selector = match_info.fetch_named ("selector");
 							string line_host = match_info.fetch_named ("host");
-							int line_port = int.parse (match_info.fetch_named ("port"));
-						
+							string s_line_port = match_info.fetch_named ("port");
+							if (s_line_port == null) s_line_port = "70";
+							int line_port = int.parse (s_line_port);
+							
 							if (line_type == '0' || line_type == '1') {
 								string url = @"gopher://%s:%d/%c%s".printf (line_host, line_port, line_type, line_selector);
 							
@@ -133,7 +144,7 @@ class Engine : Object {
 								tag.event.connect ((event_object, event, iter) => {
 										if (event.type == Gdk.EventType.BUTTON_PRESS) {
 											gopher_load (tag.get_data ("link"), true);
-											stdout.printf ("Gopher! %s\n", tag.get_data ("link"));
+											//stdout.printf ("Gopher! %s\n", tag.get_data ("link"));
 											return false;
 										}
 										else {
@@ -177,6 +188,8 @@ class Engine : Object {
 		int port;
 		char gopher_type;
 		string selector;
+		
+		stdout.printf ("DBG: %s\n", url);
 
 		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector)) {
 			return;
