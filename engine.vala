@@ -27,20 +27,28 @@ class Engine : Object {
 
 	public void visit (string url, bool note) {
 		url_entry.set_text (url);
-		if (note) history.prepend (url);
+		if (note) {
+			history.prepend (url);
+			future = new List<string> ();
+		}
 	}
 
 	public void back () {
 		if (history.length () > 1) {
+			future.prepend (history.nth_data (0));
 			history.remove_link (history.first ());
 			string url = history.nth_data (0);
-			stdout.printf("%s\n", url);
 			gopher_load (url, false);
 		}
 	}
-
+	
 	public void forward () {
-		
+		if (future.length () > 0) {
+			history.prepend (future.nth_data (0));
+			string url = future.nth_data (0);
+			future.remove_link (future.first ());
+			gopher_load (url, false);
+		}
 	}
 	
 	public bool gopher_parse_url (string url,
