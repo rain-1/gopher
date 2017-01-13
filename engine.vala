@@ -49,7 +49,7 @@ class Engine : Object {
 								  out char gopher_type,
 								  out string selector) {
 		try {
-			Regex regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/((?<gophertype>.))?(?<selector>[^:]+))?\/?$/;
+			Regex regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/((?<gophertype>.))(?<selector>[^:]+))?\/?$/;
 			MatchInfo match_info;
 			if (regex.match (url, 0, out match_info)) {
 				host = match_info.fetch_named ("host");
