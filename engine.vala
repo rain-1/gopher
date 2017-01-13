@@ -16,6 +16,13 @@ class Engine : Object {
 
 	    history = new List<string> ();
 		future = new List<string> ();
+		
+		fix_cursor ();
+	}
+
+	public void fix_cursor () {
+		var w = text_view.get_window (TextWindowType.TEXT);
+		w.set_cursor (new Gdk.Cursor.from_name (Gdk.Display.get_default (), "default"));
 	}
 
 	public void visit (string url, bool note) {
@@ -114,7 +121,7 @@ stdout.printf ("1\n");
 
 			if (gopher_type == '0') {
 				string status_line;
-				while ((status_line = response.read_line (null).strip ()) != null) {
+				while ((status_line = response.read_line (null)) != null) {
 					buf.insert(ref iter, status_line + "\n", -1);
 				}
 			}
@@ -124,9 +131,9 @@ stdout.printf ("1\n");
 					MatchInfo match_info;
 				
 					string status_line;
-					while ((status_line = response.read_line (null).strip ()) != null) {
+					while ((status_line = response.read_line (null)) != null) {
 						//DBG
-						stdout.printf ("GOPHE %s\n", status_line);
+						//stdout.printf ("GOPHE %s\n", status_line);
 						
 						if (status_line == ".") {
 							//
@@ -151,8 +158,7 @@ stdout.printf ("1\n");
 								tag.event.connect ((event_object, event, iter) => {
 										if (event.type == Gdk.EventType.BUTTON_PRESS) {
 											gopher_load (tag.get_data ("link"), true);
-											//stdout.printf ("Gopher! %s\n", tag.get_data ("link"));
-											return false;
+											return true;
 										}
 										else {
 											return true;
@@ -188,6 +194,7 @@ stdout.printf ("1\n");
 
 		visit (input_url, note);
 		text_view.set_buffer (buf);
+		fix_cursor ();
 	}
 	
 	public void gopher_load (string url, bool note) {
