@@ -16,8 +16,9 @@ int main (string[] args) {
 	var go_button = builder.get_object ("go_button") as Button;
 	var url_entry = builder.get_object ("url_entry") as Entry;
 	var text_view = builder.get_object ("text_view") as TextView;
+	var spinner = builder.get_object ("spinner") as Spinner;
 
-	Engine engine = new Engine (url_entry, text_view);
+	Engine engine = new Engine (url_entry, text_view, spinner);
 	back_button.clicked.connect (() => {
 			engine.back();
 		});

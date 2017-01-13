@@ -1,15 +1,18 @@
 using Gtk;
+using GLib;
 
 class Engine : Object {
     Entry url_entry;
 	TextView text_view;
+	Spinner spinner;
 
 	List<string> history;
 	List<string> future;
 	
-	public Engine (Entry url_entry, TextView text_view) {
+	public Engine (Entry url_entry, TextView text_view, Spinner spinner) {
 		this.url_entry = url_entry;
 		this.text_view = text_view;
+		this.spinner = spinner;
 
 	    history = new List<string> ();
 		future = new List<string> ();
@@ -46,6 +49,7 @@ class Engine : Object {
 			
 				string s_port = match_info.fetch_named ("port");
 				if (s_port == null) s_port = "70";
+				if (s_port == "") s_port = "70";
 				port = int.parse(s_port);
 
 				string gt = match_info.fetch_named ("gophertype");
@@ -79,7 +83,7 @@ class Engine : Object {
 		}
 	}
 
-	public async void gopher_request (string input_url,
+	public void gopher_request (string input_url,
 									  string host, int port, char gopher_type, string selector,
 									  bool note) {
 		TextBuffer buf;
@@ -88,12 +92,15 @@ class Engine : Object {
 			// Resolve hostname to IP address:
 			Resolver resolver = Resolver.get_default ();
 			List<InetAddress> addresses = resolver.lookup_by_name (host, null);
+stdout.printf ("4\n");
 			InetAddress address = addresses.nth_data (0);
 
+stdout.printf ("3\n");
 			// Connect:
 			SocketClient client = new SocketClient ();
+			stdout.printf ("2 %d\n", port);
 			SocketConnection conn = client.connect (new InetSocketAddress (address, (uint16) port));
-
+stdout.printf ("1\n");
 			// Send HTTP GET request
 			string message = @"%s\n\r".printf (selector);
 			conn.output_stream.write (message.data);
@@ -182,9 +189,9 @@ class Engine : Object {
 		visit (input_url, note);
 		text_view.set_buffer (buf);
 	}
-
+	
 	public void gopher_load (string url, bool note) {
-		string host;
+	    string host;
 		int port;
 		char gopher_type;
 		string selector;
@@ -194,7 +201,12 @@ class Engine : Object {
 		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector)) {
 			return;
 		}
-	
-		gopher_request (url, host, port, gopher_type, selector, note);
+		
+		new Thread<int>("gopher request", ()=>{
+				spinner.start();
+				gopher_request (url, host, port, gopher_type, selector, note);
+				spinner.stop();
+				return 0;
+			});
 	}
 }
