@@ -28,10 +28,10 @@ int main (string[] args) {
 		});
 	go_button.clicked.connect (() => {
 			engine.gopher_load (url_entry.text, true);
-    });
+		});
 	url_entry.activate.connect (() => {
 			engine.gopher_load (url_entry.text, true);
-    });
+		});
 	
     Gtk.main ();
     return 0;
