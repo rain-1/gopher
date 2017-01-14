@@ -10,7 +10,8 @@ int main (string[] args) {
 		return -1;
     }
 	builder.connect_signals (null);
-	
+
+	var main_window = builder.get_object ("main_window") as Window;
 	var back_button = builder.get_object ("back_button") as Button;
 	var forward_button = builder.get_object ("forward_button") as Button;
 	var go_button = builder.get_object ("go_button") as Button;
@@ -18,7 +19,7 @@ int main (string[] args) {
 	var text_view = builder.get_object ("text_view") as TextView;
 	var spinner = builder.get_object ("spinner") as Spinner;
 
-	Engine engine = new Engine (url_entry, text_view, spinner);
+	Engine engine = new Engine (main_window, url_entry, text_view, spinner);
 	back_button.clicked.connect (() => {
 			engine.back();
 		});

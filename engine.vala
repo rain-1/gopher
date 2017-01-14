@@ -2,6 +2,7 @@ using Gtk;
 using GLib;
 
 class Engine : Object {
+	Window main_window;
     Entry url_entry;
 	TextView text_view;
 	Spinner spinner;
@@ -9,7 +10,8 @@ class Engine : Object {
 	List<string> history;
 	List<string> future;
 	
-	public Engine (Entry url_entry, TextView text_view, Spinner spinner) {
+	public Engine (Window main_window, Entry url_entry, TextView text_view, Spinner spinner) {
+		this.main_window = main_window;
 		this.url_entry = url_entry;
 		this.text_view = text_view;
 		this.spinner = spinner;
@@ -157,7 +159,7 @@ stdout.printf ("1\n");
 							
 							if (line_type == '0' || line_type == '1') {
 								string url = @"gopher://%s:%d/%c%s".printf (line_host, line_port, line_type, line_selector);
-							
+								
 								TextTag tag = buf.create_tag (null,
 															  "foreground", "blue",
 															  "underline", Pango.Underline.SINGLE,
@@ -176,6 +178,36 @@ stdout.printf ("1\n");
 							}
 							else if (line_type == 'i') {
 								buf.insert(ref iter, status + "\n", -1);
+							}
+							else if (line_type == 'h' || line_type == 'H') {
+								string url = line_selector;
+
+								if (url.has_prefix ("URL:")) {
+									url = url.substring (4);
+								}
+								
+								TextTag tag = buf.create_tag (null,
+															  "foreground", "red",
+															  "underline", Pango.Underline.SINGLE,
+															  null);
+								tag.set_data ("link", url);
+								tag.event.connect ((event_object, event, iter) => {
+										if (event.type == Gdk.EventType.BUTTON_PRESS) {
+
+											stdout.printf ("Opening %s\n", tag.get_data ("link"));
+											
+											if (!show_uri_on_window (main_window, tag.get_data ("link"), 0))
+											{
+												stderr.printf ("Couldn't open URL.");
+											}
+											
+											return true;
+										}
+										else {
+											return true;
+										}
+									});
+								buf.insert_with_tags(ref iter, status + "\n", -1, tag, null);
 							}
 							else {
 								stdout.printf ("Gopher parsing error 3 %s\n", status_line);
