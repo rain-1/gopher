@@ -17,7 +17,7 @@ class Engine : Object {
 
 	Regex gopher_url_regex;
 	Regex gopher_line_regex;
-	
+
 	public Engine (Window main_window, Entry url_entry, TextView text_view, Spinner spinner) {
 		this.main_window = main_window;
 		this.url_entry = url_entry;
@@ -64,22 +64,26 @@ class Engine : Object {
 		}
 	}
 	
-	public void gopher_load (string url, bool note) {
-	    string host;
+	public async void gopher_load (string url, bool note) {
+		string host;
 		int port;
 		char gopher_type;
 		string selector;
-
-		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector)) {
+ 
+		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector))
 			return;
-		}
 		
-		new Thread<int>("gopher request", ()=>{
-				spinner.start();
+		spinner.start ();
+		
+		new Thread<int> ("gopher request", () => {
 				gopher_request (url, host, port, gopher_type, selector, note);
-				spinner.stop();
+				Idle.add (gopher_load.callback);
 				return 0;
 			});
+		
+		yield;
+		
+		spinner.stop();
 	}
 	
 	public bool gopher_parse_url (string url,
@@ -152,7 +156,7 @@ class Engine : Object {
 			
 			// Receive response
 			response = new DataInputStream (conn.input_stream);
-		
+			
 			buf = new TextBuffer (null);
 			buf.get_start_iter (out iter);
 		
