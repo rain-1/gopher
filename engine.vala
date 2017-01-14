@@ -264,7 +264,7 @@ class Engine : Object {
 						
 					case LinkType.HYPER:
 						try {
-							if (!show_uri_on_window (main_window, link, 0)) {
+							if (!Gtk.show_uri (null, link, 0)) {
 								stderr.printf ("Couldn't open URL: %s.\n", link);
 							}
 						}
