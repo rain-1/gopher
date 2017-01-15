@@ -29,7 +29,7 @@ class Engine : Object {
 		
 		fix_cursor ();
 
-		gopher_url_regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/((?<gophertype>.))(?<selector>[^:]+))?\/?$/;
+		gopher_url_regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/((?<gophertype>.))(?<selector>[^:]*))?\/?$/;
 	    gopher_line_regex = /(?<gopher_type>.)(?<text>[^\t]*)(\t(?<selector>[^\t]*))?(\t(?<host>[^\t]*))?(\t(?<port>[^\t]*))?/;
 	}
 
