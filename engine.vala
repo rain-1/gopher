@@ -69,19 +69,29 @@ class Engine : Object {
 		int port;
 		char gopher_type;
 		string selector;
- 
+
+		TextBuffer buf = null;
+		bool success;
+		
 		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector))
 			return;
 		
 		spinner.start ();
-		
+
+		success = false;
 		new Thread<int> ("gopher request", () => {
-				gopher_request (url, host, port, gopher_type, selector, note);
+				success = gopher_request (url, host, port, gopher_type, selector, note, out buf);
 				Idle.add (gopher_load.callback);
 				return 0;
 			});
 		
 		yield;
+
+		if(success && buf != null) {
+			visit (url, note);
+			text_view.set_buffer (buf);
+			fix_cursor ();
+		}
 		
 		spinner.stop();
 	}
@@ -132,9 +142,10 @@ class Engine : Object {
 		}
 	}
 	
-	public void gopher_request (string input_url,
+	public bool gopher_request (string input_url,
 								string host, int port, char gopher_type, string selector,
-								bool note) {
+								bool note,
+								out TextBuffer buf2) {
 		DataInputStream response;
 		
 		TextBuffer buf;
@@ -171,21 +182,21 @@ class Engine : Object {
 					}
 					else {
 						stdout.printf ("Unhandled gopher type: %c\n", gopher_type);
-						return;
+						return false;
 					}
 				}
 			} catch(IOError e) {
 				stdout.printf ("IOError: %s\n", e.message);
-				return;
+				return false;
 			}
 		} catch (Error e) {
 			stdout.printf ("Error: %s\n", e.message);
-			return;
+			return false;
 		}
-		
-		visit (input_url, note);
-		text_view.set_buffer (buf);
-		fix_cursor ();
+
+		buf2 = buf;
+
+		return true;
 	}
 
 	void gopher_page_handle_line (string line, TextBuffer buf, ref TextIter iter) {
