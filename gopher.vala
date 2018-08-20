@@ -18,6 +18,10 @@ int main (string[] args) {
 	var url_entry = builder.get_object ("url_entry") as Entry;
 	var text_view = builder.get_object ("text_view") as TextView;
 	var spinner = builder.get_object ("spinner") as Spinner;
+	
+	if(args.length == 2) {
+	    url_entry.text = args[1];
+	}
 
 	Engine engine = new Engine (main_window, url_entry, text_view, spinner);
 	back_button.clicked.connect (() => {

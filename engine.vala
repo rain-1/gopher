@@ -31,6 +31,10 @@ class Engine : Object {
 
 		gopher_url_regex = /^(gopher:\/\/)?(?<host>[^\/:]*)(:(?<port>[0-9]+))?(\/((?<gophertype>.))(?<selector>[^:]*))?\/?$/;
 	    gopher_line_regex = /(?<gopher_type>.)(?<text>[^\t]*)(\t(?<selector>[^\t]*))?(\t(?<host>[^\t]*))?(\t(?<port>[^\t]*))?/;
+		
+		if(url_entry.text != "") {
+		    gopher_load (url_entry.text, true);
+		}
 	}
 
 	public void fix_cursor () {
