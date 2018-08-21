@@ -2,13 +2,7 @@ using Gtk;
 
 int main (string[] args) {
     Gtk.init (ref args);
-    var builder = new Builder ();
-	try {
-        builder.add_from_file ("gopher.ui");
-    } catch (Error e) {
-		stderr.printf ("Could not load UI: %s\n", e.message);
-		return -1;
-    }
+    var builder = new Gtk.Builder.from_resource ("/rain-1/gopher.ui");
 	builder.connect_signals (null);
 
 	var main_window = builder.get_object ("main_window") as Window;

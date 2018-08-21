@@ -1,0 +1,10 @@
+#!/bin/sh
+case "$1" in
+	gopher://*)
+		"$GOPHER" "$1"
+		;;
+	*)
+		# else chainload
+		exec /usr/bin/xdg-open "$1"
+		;;
+esac
