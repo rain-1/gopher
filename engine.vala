@@ -74,7 +74,6 @@ class Engine : Object {
 		char gopher_type;
 		string selector;
 
-		TextBuffer buf = null;
 		bool success;
 		
 		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector))
@@ -83,17 +82,18 @@ class Engine : Object {
 		spinner.start ();
 
 		success = false;
+		List<string> lines = new List<string> ();
 		new Thread<int> ("gopher request", () => {
-				success = gopher_request (url, host, port, gopher_type, selector, note, out buf);
+				success = gopher_request (url, host, port, selector, note, ref lines);
 				Idle.add (gopher_load.callback);
 				return 0;
 			});
 		
 		yield;
 
-		if(success && buf != null) {
+		if(success) {
 			visit (url, note);
-			text_view.set_buffer (buf);
+			gopher_lines_to_buffer (lines, gopher_type, text_view);
 			fix_cursor ();
 		}
 		
@@ -147,13 +147,10 @@ class Engine : Object {
 	}
 	
 	public bool gopher_request (string input_url,
-								string host, int port, char gopher_type, string selector,
+								string host, int port, string selector,
 								bool note,
-								out TextBuffer buf2) {
+								ref List<string> lines) {
 		DataInputStream response;
-		
-		TextBuffer buf;
-		TextIter iter;
 		
 		try {
 			// Resolve hostname to IP address:
@@ -172,37 +169,51 @@ class Engine : Object {
 			// Receive response
 			response = new DataInputStream (conn.input_stream);
 			
-			buf = new TextBuffer (null);
-			buf.get_start_iter (out iter);
-		
 			string line;
 			try {
 				while ((line = response.read_line (null)) != null) {
-					if (gopher_type == '0') {
-						buf.insert(ref iter, line + "\n", -1);
-					}
-					else if (gopher_type == '1') {
-						gopher_page_handle_line (line, buf, ref iter);
-					}
-					else {
-						stdout.printf ("Unhandled gopher type: %c\n", gopher_type);
-						return false;
-					}
+					stdout.printf ("DBG INFO [%s]\n", line.replace("\r","\\r").replace("\n","\\n"));
+					lines.append(line);
 				}
 			} catch(IOError e) {
 				stdout.printf ("IOError: %s\n", e.message);
-				return false;
+				//return false;
+				return true; // if we got an IO error just give up and pretend it didn't happen
 			}
 		} catch (Error e) {
 			stdout.printf ("Error: %s\n", e.message);
 			return false;
 		}
 
-		buf2 = buf;
-
 		return true;
 	}
-
+	
+	void gopher_lines_to_buffer (List<string> lines, char gopher_type, TextView text_view) {
+		TextIter iter;
+		TextBuffer buf;
+		
+	    buf = new TextBuffer (null);
+		buf.get_start_iter (out iter);
+		
+		lines.foreach ((line) => {
+//		for(var i = 0; i < lines.length(); i++) {
+//			string line = lines.nth_data(i);
+			
+				if (gopher_type == '0') {
+					buf.insert(ref iter, line + "\n", -1);
+				}
+				else if (gopher_type == '1') {
+					gopher_page_handle_line (line, buf, ref iter);
+				}
+				else {
+					stdout.printf ("Unhandled gopher type: %c\n", gopher_type);
+					return;
+				}
+			});
+		
+		text_view.set_buffer (buf);
+	}
+	
 	void gopher_page_handle_line (string line, TextBuffer buf, ref TextIter iter) {
 		MatchInfo match_info;
 
