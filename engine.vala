@@ -206,7 +206,7 @@ class Engine : Object {
 	void gopher_page_handle_line (string line, TextBuffer buf, ref TextIter iter) {
 		MatchInfo match_info;
 
-		if (line == ".") {
+		if (line == "." || line == ".\r") {
 			buf.insert(ref iter, line + "\n", -1);
 			return;
 		}
