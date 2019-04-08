@@ -82,18 +82,24 @@ class Engine : Object {
 		spinner.start ();
 
 		success = false;
-		List<string> lines = new List<string> ();
-		new Thread<int> ("gopher request", () => {
-				success = gopher_request (url, host, port, selector, note, ref lines);
-				Idle.add (gopher_load.callback);
-				return 0;
-			});
+		//new Thread<int> ("gopher request", () => {
+		string all_lines;
+		success = yield gopher_request (url, host, port, selector, note, out all_lines);
+	//	Idle.add (gopher_load.callback);
+	//	return 0;
+	// });
 		
-		yield;
+		// yield;
 
 		if(success) {
 			visit (url, note);
+			
+			List<string> lines = new List<string> ();
+			foreach(unowned string line in all_lines.split("\n")) {
+				lines.append(line);
+			}
 			gopher_lines_to_buffer (lines, gopher_type, text_view);
+			
 			fix_cursor ();
 		}
 		
@@ -146,11 +152,12 @@ class Engine : Object {
 		}
 	}
 	
-	public bool gopher_request (string input_url,
-								string host, int port, string selector,
-								bool note,
-								ref List<string> lines) {
+	public async bool gopher_request (string input_url,
+									  string host, int port, string selector,
+									  bool note,
+									  out string all_lines) {
 		DataInputStream response;
+//		string all_lines;
 		
 		try {
 			// Resolve hostname to IP address:
@@ -160,30 +167,34 @@ class Engine : Object {
 			
 			// Connect:
 			SocketClient client = new SocketClient ();
-			SocketConnection conn = client.connect (new InetSocketAddress (address, (uint16) port));
+			SocketConnection conn = yield client.connect_async (new InetSocketAddress (address, (uint16) port));
 			
 			// Send HTTP GET request
 			string message = @"%s\n\r".printf (selector);
-			conn.output_stream.write (message.data);
+			yield conn.output_stream.write_async (message.data);
 			
 			// Receive response
+			conn.socket.set_blocking (true);
 			response = new DataInputStream (conn.input_stream);
+			//response.set_newline_type(DataStreamNewlineType.CR_LF);
 			
-			string line;
-			try {
-				while ((line = response.read_line (null)) != null) {
-					stdout.printf ("DBG INFO [%s]\n", line.replace("\r","\\r").replace("\n","\\n"));
-					lines.append(line);
-				}
-			} catch(IOError e) {
-				stdout.printf ("IOError: %s\n", e.message);
-				//return false;
-				return true; // if we got an IO error just give up and pretend it didn't happen
-			}
+			//try {
+			size_t my_len;
+			all_lines = response.read_upto ("", 0, out my_len);
+			
+		//} catch(IOError e) {
+			//stdout.printf ("IOError: %s\n", e.message);
+			//return false;
+			//return true; // if we got an IO error just give up and pretend it didn't happen
+		//}
 		} catch (Error e) {
 			stdout.printf ("Error: %s\n", e.message);
 			return false;
 		}
+		
+		//foreach(unowned string line in all_lines.split("\n")) {
+		//lines.append(line);
+	//}
 
 		return true;
 	}
