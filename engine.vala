@@ -170,7 +170,7 @@ class Engine : Object {
 			SocketConnection conn = yield client.connect_async (new InetSocketAddress (address, (uint16) port));
 			
 			// Send HTTP GET request
-			string message = @"%s\r\n".printf (selector);
+			string message = "%s\r\n".printf (selector);
 			yield conn.output_stream.write_async (message.data);
 			
 			// Receive response
@@ -250,7 +250,7 @@ class Engine : Object {
 			buf.insert(ref iter, text + "\n", -1);
 		}
 		else if (line_type == '0' || line_type == '1') {
-			string url = @"gopher://%s:%d/%c%s".printf (line_host, line_port, line_type, line_selector);
+			string url = "gopher://%s:%d/%c%s".printf (line_host, line_port, line_type, line_selector);
 			
 			insert_link_to (text, url, LinkType.GOPHE,
 							buf, ref iter);
