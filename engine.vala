@@ -83,7 +83,7 @@ class Engine : Object {
 
 		success = false;
 		//new Thread<int> ("gopher request", () => {
-		string all_lines;
+		string all_lines = "";
 		success = yield gopher_request (url, host, port, selector, note, out all_lines);
 	//	Idle.add (gopher_load.callback);
 	//	return 0;
