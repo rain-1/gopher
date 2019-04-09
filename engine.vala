@@ -170,7 +170,7 @@ class Engine : Object {
 			SocketConnection conn = yield client.connect_async (new InetSocketAddress (address, (uint16) port));
 			
 			// Send HTTP GET request
-			string message = @"%s\n\r".printf (selector);
+			string message = @"%s\r\n".printf (selector);
 			yield conn.output_stream.write_async (message.data);
 			
 			// Receive response
