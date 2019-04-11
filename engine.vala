@@ -75,33 +75,24 @@ class Engine : Object {
 		string selector;
 
 		bool success;
+		string text = "";
 		
+
 		if (!gopher_parse_url (url, out host, out port, out gopher_type, out selector))
 			return;
 		
 		spinner.start ();
-
-		success = false;
-		//new Thread<int> ("gopher request", () => {
-		string all_lines = "";
-		success = yield gopher_request (url, host, port, selector, note, out all_lines);
-	//	Idle.add (gopher_load.callback);
-	//	return 0;
-	// });
 		
-		// yield;
-
-		if(success) {
-			visit (url, note);
-			
-			List<string> lines = new List<string> ();
-			foreach(unowned string line in all_lines.split("\n")) {
-				lines.append(line);
-			}
-			gopher_lines_to_buffer (lines, gopher_type, text_view);
-			
-			fix_cursor ();
+		success = yield gopher_request (url, host, port, selector, note, out text);
+		
+		if(!success) {
+			spinner.stop();
+			return;
 		}
+		
+		visit (url, note);
+		gopher_text_to_buffer (text, gopher_type, text_view);
+		fix_cursor ();
 		
 		spinner.stop();
 	}
@@ -156,9 +147,6 @@ class Engine : Object {
 									  string host, int port, string selector,
 									  bool note,
 									  out string all_lines) {
-		DataInputStream response;
-//		string all_lines;
-		
 		try {
 			// Resolve hostname to IP address:
 			Resolver resolver = Resolver.get_default ();
@@ -175,52 +163,39 @@ class Engine : Object {
 			
 			// Receive response
 			conn.socket.set_blocking (true);
-			response = new DataInputStream (conn.input_stream);
-			//response.set_newline_type(DataStreamNewlineType.CR_LF);
+			DataInputStream response = new DataInputStream (conn.input_stream);
 			
-			//try {
+			// response.set_newline_type(DataStreamNewlineType.CR_LF);
+			
 			size_t my_len;
 			all_lines = response.read_upto ("", 0, out my_len);
-			
-		//} catch(IOError e) {
-			//stdout.printf ("IOError: %s\n", e.message);
-			//return false;
-			//return true; // if we got an IO error just give up and pretend it didn't happen
-		//}
 		} catch (Error e) {
 			stdout.printf ("Error: %s\n", e.message);
 			return false;
 		}
 		
-		//foreach(unowned string line in all_lines.split("\n")) {
-		//lines.append(line);
-	//}
-
 		return true;
 	}
 	
-	void gopher_lines_to_buffer (List<string> lines, char gopher_type, TextView text_view) {
+	void gopher_text_to_buffer (string lines, char gopher_type, TextView text_view) {
 		TextIter iter;
 		TextBuffer buf;
 		
 	    buf = new TextBuffer (null);
 		buf.get_start_iter (out iter);
 		
-		lines.foreach ((line) => {
-//		for(var i = 0; i < lines.length(); i++) {
-//			string line = lines.nth_data(i);
-			
-				if (gopher_type == '0') {
-					buf.insert(ref iter, line + "\n", -1);
-				}
-				else if (gopher_type == '1') {
-					gopher_page_handle_line (line, buf, ref iter);
-				}
-				else {
-					stdout.printf ("Unhandled gopher type: %c\n", gopher_type);
-					return;
-				}
-			});
+		foreach(unowned string line in lines.split("\n")) {
+			if (gopher_type == '0') {
+				buf.insert(ref iter, line + "\n", -1);
+			}
+			else if (gopher_type == '1') {
+				gopher_page_handle_line (line, buf, ref iter);
+			}
+			else {
+				stdout.printf ("Unhandled gopher type: %c\n", gopher_type);
+				return;
+			}
+		}
 		
 		text_view.set_buffer (buf);
 	}
